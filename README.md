@@ -2,6 +2,10 @@
 - นางสาวจิดาภา กันทวงศ์ 67543206042-3
 
 # URL จริงของทุก Service บน Railway
+- Auth Service: https://auth-service-production-559c.up.railway.app
+- Task Service: https://task-service-production-b94a.up.railway.app
+- User Service: https://user-service-production-bf73.up.railway.app
+- Frontend URL: https://frontend-production-ad4c.up.railway.app
 
 ```text
 
