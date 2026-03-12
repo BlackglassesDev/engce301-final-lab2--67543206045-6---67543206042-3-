@@ -7,18 +7,42 @@
 - User Service: https://user-service-production-bf73.up.railway.app
 - Frontend URL: https://frontend-production-ad4c.up.railway.app
 
+# Architecture diagram (Cloud version)
+
 ```text
+Internet
+    │
+    ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│   🌐 Railway Cloud Platform                                              │
+│                                                                          │
+│  ┌───────────────────┐  ┌──────────────────────┐  ┌───────────────────┐  │
+│  │  🔑 Auth Service  │  │  📋 Task Service      │  │  👤 User Service  │  │
+│  │  auth.up.rlwy.net │  │  task.up.rlwy.net    │  │  user.up.rlwy.net │  │
+│  │  PORT: 3001       │  │  PORT: 3002          │  │  PORT: 3003       │  │
+│  └────────┬──────────┘  └──────────┬───────────┘  └────────┬──────────┘  │
+│           │                        │                       │             │
+│           ▼                        ▼                       ▼             │
+│  ┌────────────────┐   ┌─────────────────────┐  ┌──────────────────────┐  │
+│  │  🗄️ auth-db    │   │  🗄️ task-db          │  │  🗄️ user-db          │  │
+│  │  PostgreSQL    │   │  PostgreSQL         │  │  PostgreSQL          │  │
+│  │  users table   │   │  tasks table        │  │  user_profiles table │  │
+│  │  logs table    │   │  logs table         │  │  logs table          │  │
+│  └────────────────┘   └─────────────────────┘  └──────────────────────┘  │
+│                                                                          │
+│  JWT_SECRET ใช้ร่วมกันทุก service (ผ่าน Railway Environment Variables)        │
+└──────────────────────────────────────────────────────────────────────────┘
 
 ```
 
-### วิธีรัน: ./scripts/gen-certs.sh → cp .env.example .env → docker compose up --build
+# Gateway Strategy ที่เลือก + เหตุผล
 
-1. สร้าง SSL Certificate: สำหรับการใช้งาน HTTPS ในระดับ Development
-    chmod +x scripts/gen-certs.sh
-    ./scripts/gen-certs.sh
+1. Option A (Frontend เรียก URL ของแต่ละ service โดยตรง)
+Frontend มีการชี้ Environment Variables (AUTH_API, TASK_API, USER_API) เพื่อยิงหน้าเว็บหาแต่ละ Microservice โดยตรง
 
-2. เตรียมไฟล์ Environment:
-    cp .env.example .env
+2. Option B (สร้าง API Gateway บน Railway เพื่อ Route Traffic) และ Bonus
+มีการใช้ Nginx ทำหน้าที่เป็น Gateway รวมทุก Service และ Frontend เข้าด้วยกันเป็น URL เดียวลดปัญหา CORS
+Bonus: เพิ่มการคอนฟิก Rate Limit ภายใน Nginx Gateway เพื่อป้องกันการสแปมและโจมตีเบื้องต้น
 
 3. รันระบบผ่าน Docker Compose:
     docker compose up --build
