@@ -37,34 +37,51 @@ Internet
 
 # Gateway Strategy ที่เลือก + เหตุผล
 
-1. Option A (Frontend เรียก URL ของแต่ละ service โดยตรง)
-Frontend มีการชี้ Environment Variables (AUTH_API, TASK_API, USER_API) เพื่อยิงหน้าเว็บหาแต่ละ Microservice โดยตรง
+Option A (Frontend เรียก URL ของแต่ละ service โดยตรง)
+- Frontend มีการชี้ Environment Variables (AUTH_API, TASK_API, USER_API) เพื่อยิงหน้าเว็บหาแต่ละ Microservice โดยตรง
 
-2. Option B (สร้าง API Gateway บน Railway เพื่อ Route Traffic) และ Bonus
-มีการใช้ Nginx ทำหน้าที่เป็น Gateway รวมทุก Service และ Frontend เข้าด้วยกันเป็น URL เดียวลดปัญหา CORS
+Option B (สร้าง API Gateway บน Railway เพื่อ Route Traffic) และ Bonus
+- มีการใช้ Nginx ทำหน้าที่เป็น Gateway รวมทุก Service และ Frontend เข้าด้วยกันเป็น URL เดียวลดปัญหา CORS
 Bonus: เพิ่มการคอนฟิก Rate Limit ภายใน Nginx Gateway เพื่อป้องกันการสแปมและโจมตีเบื้องต้น
 
-3. รันระบบผ่าน Docker Compose:
-    docker compose up --build
 
 
-### Seed Users Table
 
-Username,      Email,Password (Plain-text),         Role
-alice,         alice@lab.local,alice123,            member
-bob,           bob@lab.local,bob456,                member
-admin,         admin@lab.local,adminpass,           admin
+# วิธีทดสอบ (curl commands หรือ Postman collection)
+### Register
+curl -X POST https://auth-service-production-559c.up.railway.app/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"myuser","password":"mypass","email":"my@email.com"}'
+
+### Login → เก็บ token
+TOKEN=$(curl -s -X POST https://auth-service-production-559c.up.railway.app/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"alice@lab.local","password":"alice123"}' | jq -r '.token')
+
+### Create Task
+curl -X POST https://task-service-production-b94a.up.railway.app/api/tasks \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"My first cloud task"}'
+
+### Get Profile
+curl https://user-service-production-bf73.up.railway.app/api/users/profile \
+  -H "Authorization: Bearer $TOKEN"
+
+### Test 401
+curl https://task-service-production-b94a.up.railway.app/api/tasks   # ไม่ใส่ token → ต้องได้ 401
 
 
-### อธิบายสั้น ๆ ว่า HTTPS ทำงานอย่างไรในระบบนี้
-ระบบนี้ใช้ Nginx เป็นตัวจัดการความปลอดภัยที่ด่านหน้า (API Gateway):
 
-HTTPS Redirect: เมื่อมีการเข้าผ่านพอร์ต 80 (HTTP) Nginx จะสั่ง Redirect ไปที่พอร์ต 443 (HTTPS) ทันที
 
-TLS Termination: Nginx จะทำหน้าที่ถอดรหัส (Decrypt) ข้อมูล HTTPS ที่ส่งมาจาก Browser โดยใช้ไฟล์ Certificate (cert.pem, key.pem) ที่เราสร้างขึ้น
 
-Internal Communication: หลังจาก Nginx ตรวจสอบความถูกต้องแล้ว จะส่งข้อมูลต่อไปยัง Service ภายใน (Auth, Task, Log) ผ่าน Docker Network ซึ่งช่วยลดภาระของ Microservices ไม่ต้องจัดการ SSL เองทุกตัว
+# ปัญหาที่เจอระหว่างทำ + วิธีแก้ (optional แต่ได้ bonus)
+CORS Error
+- Frontend เรียกข้าม Service (Auth/User/Task) บน Railway
+- ตั้งค่า Middleware cors ในทุก Service ให้รองรับ URL ของ Frontend
 
-Security Headers: มีการเพิ่ม Header เช่น HSTS, X-Frame-Options และ X-XSS-Protection เพื่อป้องกันการโจมตีจากภายนอก
+Database Connection
+- ระบบหา Hostname ของ DB ไม่เจอเมื่อรันบน Local vs Cloud
+- ใช้ DATABASE_URL ที่ Railway กำหนดให้ใน Environment และคุมผ่าน .env
 
 
