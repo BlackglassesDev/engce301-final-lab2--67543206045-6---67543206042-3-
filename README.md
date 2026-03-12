@@ -84,4 +84,10 @@ Database Connection
 - ระบบหา Hostname ของ DB ไม่เจอเมื่อรันบน Local vs Cloud
 - ใช้ DATABASE_URL ที่ Railway กำหนดให้ใน Environment และคุมผ่าน .env
 
+JWT Invalid
+- ค่า JWT_SECRET ในแต่ละ Service ไม่ตรงกัน
+- ตั้งค่า Environment Variable JWT_SECRET บน Railway ทุก Service ให้เป็นค่าเดียวกัน
 
+Profile Not Found
+- ตอน Login ครั้งแรกยังไม่มีข้อมูลในตาราง user_profiles
+- ตรวจสอบ Logic ใน User Service ให้ทำ Auto-Create หรือ Manual Seed ข้อมูล Profile เริ่มต้น
