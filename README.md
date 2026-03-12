@@ -1,41 +1,10 @@
 - นายชโนดม อองกุลนะ 67543206045-6
 - นางสาวจิดาภา กันทวงศ์ 67543206042-3
 
-### Architecture Diagram
+# URL จริงของทุก Service บน Railway
 
 ```text
-Browser / Postman
-│
-│ HTTPS :443 (HTTP :80 redirect → HTTPS)
-▼
-┌─────────────────────────────────────────────────────────┐
-│ 🛡️ Nginx (API Gateway + TLS Termination + Rate Limiter) │
-│                                                          │
-│ /api/auth/_ → auth-service:3001 (ไม่ต้องมี JWT)          │
-│ /api/tasks/_ → task-service:3002 [JWT required]          │
-│ /api/logs/\* → log-service:3003 [JWT required]           │
-│ / → frontend:80 (Static HTML)                            │
-└───────┬────────────────┬──────────────────┬───────────────
-        │                │                  │
-        ▼                ▼                  ▼
-┌──────────────┐ ┌───────────────┐ ┌──────────────────┐
-│ 🔑 Auth Svc │ │ 📋 Task Svc   │ │ 📝 Log Service   │
-│     :3001    │ │     :3002     │ │      :3003       │
-│              │ │               │ │                  │
-│ • Login      │ │ • CRUD Tasks  │ │ • POST /api/logs │
-│ • /verify    │ │ • JWT Guard   │ │ • GET /api/logs  │
-│ • /me        │ │ • Log events  │ │ • เก็บลง DB       │
-└──────┬───────┘ └───────┬───────┘ └──────────────────┘
-       │                 │
-       └────────┬────────┘
-                ▼
-    ┌─────────────────────┐
-    │ 🗄️ PostgreSQL      │      
-    │ (1 shared DB)       │
-    │ • users table       │
-    │ • tasks table       │
-    │ • logs table        │
-    └─────────────────────┘
+
 ```
 
 ### วิธีรัน: ./scripts/gen-certs.sh → cp .env.example .env → docker compose up --build
